@@ -17,6 +17,7 @@ from requests import get
 from PyQt5.QtCore import QUrl
 from PyQt5.QtGui import QDesktopServices
 
+#pyinstaller --upx-dir  <your upx directory> --onefile --icon='icon.ico' --noconsole --main.py
 
 version = '1.0.0'
 icon_path = 'icon.ico'
