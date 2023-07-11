@@ -31,8 +31,7 @@ def check_and_create_folder(folder_path):
 
 check_and_create_folder('data')
 check_and_create_folder('data/backup')
-#TODO 업데이트 함수 연결
-#TODO 
+
 
 form_class = uic.loadUiType("breakcat.ui")[0]
 encoding_per_index = {'shift_jis': 0, 'cp949' : 1, 'utf_8': 2, 'ascii': 3, 'gb2312': 4, 'big5': 5, 'mac_roman': 6, 'cp1252': 7}
