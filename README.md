@@ -17,3 +17,6 @@
 # 🐱 Download - 다운로드 🐱
 > 하단의 링크를 누르면 Release로 이동해요.<br>
 > [🐈 ➡️ Go to Release](https://github.com/EX3exp/BreakCat/releases/latest)
+
+# 🐱 Reference 🐱
+[GTRONICK/QSS](https://github.com/GTRONICK/QSS)
