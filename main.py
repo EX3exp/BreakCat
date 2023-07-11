@@ -1,15 +1,17 @@
 import sys
-from os.path import isfile
+from os.path import isfile, exists
+from os.path import join as join_
+from os.path import split as split_
 from PyQt5.QtWidgets import QApplication, QMainWindow, QComboBox, QFileDialog, QMessageBox
 from PyQt5 import uic
 from PyQt5.QtGui import QIcon, QCursor
 from PyQt5.QtCore import QTranslator, QStringListModel
 import pickle
 from functools import partial
-from os import remove, path, rename, listdir, makedirs
+from os import remove, rename, listdir, makedirs
 from chardet import detect
 from PyQt5.QtCore import Qt 
-from datetime import datetime
+from datetime import datetime as dt
 from shutil import copy
 
 from json import loads as jsonloads
@@ -17,13 +19,13 @@ from requests import get
 from PyQt5.QtCore import QUrl
 from PyQt5.QtGui import QDesktopServices
 
-#pyinstaller --upx-dir  <your upx directory> --onefile --icon='icon.ico' --noconsole --main.py
+#pyinstaller --upx-dir  <your upx directory> --onefile --icon='icon.ico' --noconsole main.py
 
-version = '1.0.0'
+version = '1.0.1'
 icon_path = 'icon.ico'
 
 def check_and_create_folder(folder_path):
-    if not path.exists(folder_path):
+    if not exists(folder_path):
         makedirs(folder_path)
         print(f"폴더가 생성되었습니다: {folder_path}")
     else:
@@ -475,30 +477,44 @@ class BreakCatWindow(QMainWindow, form_class):
         msg_box.addButton(" ✔️ Yes ", QMessageBox.AcceptRole)
         msg_box.addButton(" ❌ No ", QMessageBox.RejectRole)
         result = msg_box.exec_()
-        if result == QMessageBox.AcceptRole:
+        try:
+            if result == QMessageBox.AcceptRole:
             
-            filesavepath, _ = QFileDialog.getSaveFileName(self, "Save oto.ini", main_status['otoPath'], "INI Files (*.ini);;All Files (*)")
+                filesavepath, _ = QFileDialog.getSaveFileName(self, "Save oto.ini", main_status['otoPath'], "INI Files (*.ini);;All Files (*)")
 
-            if filesavepath != '':
-                oto_backup_filepath = f"data/backup/{datetime.now().strftime('%Y%m%d-%H%M%S')}_oto.ini"
-                with open(oto_backup_filepath, 'w') as f:
-                    f.write('')
+                if filesavepath != '':
+                    oto_backup_filepath = f"data/backup/{dt.now().strftime('%Y%m%d-%H%M%S')}_oto.ini"
+                    with open(oto_backup_filepath, 'w') as f:
+                        f.write('')
 
-                copy(main_status['otoPath'], oto_backup_filepath)
+                    copy(main_status['otoPath'], oto_backup_filepath)
 
-                with open(filesavepath, 'w', encoding=main_status['encodings'][encoding_status['decodeTo']], errors='ignore') as save:
-                    save.write(cache_converted['oto'])
-                    
+                    with open(filesavepath, 'w', encoding=main_status['encodings'][encoding_status['decodeTo']], errors='ignore') as save:
+                        save.write(cache_converted['oto'])
 
-                msg_box = QMessageBox()
-                msg_box.setWindowIcon(QIcon('icon.ico'))
-                msg_box.setWindowTitle(f"(o゜▽゜)o☆ \^o^/ ")
-                msg_box.setText(f"oto.ini를 저장했어요.\n백업 파일은 [{oto_backup_filepath}]에 있답니다!")
-                msg_box.addButton(" ✔️ Okay ", QMessageBox.RejectRole)
 
-                msg_box.exec_()
-        main_status['disableSaveOto'] = False
-        self.otoButtonSave.setDisabled(main_status['disableSaveOto'])
+                    msg_box = QMessageBox()
+                    msg_box.setWindowIcon(QIcon('icon.ico'))
+                    msg_box.setWindowTitle(f"(o゜▽゜)o☆ \^o^/ ")
+                    msg_box.setText(f"oto.ini를 저장했어요.\n백업 파일은 [{oto_backup_filepath}]에 있답니다!")
+                    msg_box.addButton(" ✔️ Okay ", QMessageBox.RejectRole)
+
+                    msg_box.exec_()
+            main_status['disableSaveOto'] = False
+            self.otoButtonSave.setDisabled(main_status['disableSaveOto'])
+        except Exception as e:
+            app.restoreOverrideCursor()
+            msg_box = QMessageBox()
+            msg_box.setWindowIcon(QIcon('icon.ico'))
+            msg_box.setWindowTitle(f"(っ °Д °;)っ {type(e).__name__}")
+            msg_box.setText(f"{str(e)}")
+            msg_box.addButton(" ✔️ Okay ", QMessageBox.RejectRole)
+
+            msg_box.exec_()
+            
+            main_status['disableSaveOto'] = False
+            self.otoButtonSave.setDisabled(main_status['disableSaveOto'])
+
 
     def loadFilenames(self):
         folderpath = QFileDialog.getExistingDirectory(None, "Select Voicebank Folder")
@@ -614,16 +630,16 @@ class BreakCatWindow(QMainWindow, form_class):
             try:
                 for filename, new_filename in zip(cache_original['_filename'].splitlines(), cache_converted['filename'].splitlines()):
                 # 파일이 존재하는지 확인합니다.
-                    file_path = path.join(main_status['filenamePath'], filename)
-                    if not path.isfile(file_path):
+                    file_path = join_(main_status['filenamePath'], filename)
+                    if not isfile(file_path):
                         print(f"No file: {file_path}")
                         return
 
                     # 파일의 디렉토리 경로와 기존 파일명을 추출합니다.
-                    directory, old_filename = path.split(file_path)
+                    directory, old_filename = split_(file_path)
     
                     # 새로운 파일명으로 변경합니다.
-                    new_file_path = path.join(directory, new_filename)
+                    new_file_path = join_(directory, new_filename)
                     rename(file_path, new_file_path)
                     print(f"Changed Filename: {old_filename} -> {new_filename}")
 
@@ -654,10 +670,10 @@ class BreakCatWindow(QMainWindow, form_class):
             response_text = response.text
             release_info = jsonloads(response_text)
 
-            latest_version = release_info["tag_name"][1:]
+            latest_version = release_info["tag_name"]
 
             if latest_version != version:
-                download_link = f"https://github.com/EX3exp/APA-Website-Citation-Generator/releases/download/v{latest_version}/APAGenerator{latest_version}.zip"
+                download_link = f"https://github.com/EX3exp/BreakCat/releases/download/{latest_version}/BreakCat{latest_version}.zip"
                 msg_box = QMessageBox()
                 msg_box.setIcon(QMessageBox.Information)
                 msg_box.setWindowIcon(QIcon('icon.ico'))
@@ -696,7 +712,11 @@ class BreakCatWindow(QMainWindow, form_class):
             pass
 if __name__ == "__main__":
     def delCache():
-        remove('data/cache')
+        try:
+            remove('data/cache')
+            remove('data/$')
+        except:
+            pass
 
     app = QApplication(sys.argv)
     app.aboutToQuit.connect(delCache)
